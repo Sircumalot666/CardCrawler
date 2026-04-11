@@ -1,0 +1,5 @@
+{
+  "name": "Hearthstone Card Explorer",
+  "description": "A comprehensive tool to fetch, view, and export Hearthstone card data from the official Battle.net API.",
+  "requestFramePermissions": []
+}

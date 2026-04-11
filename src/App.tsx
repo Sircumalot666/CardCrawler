@@ -10,6 +10,7 @@ import {
   Filter
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Virtuoso } from 'react-virtuoso';
 import { hearthstoneService } from './services/hearthstoneService';
 import { Card, MetadataResponse } from './types';
 import { Parser } from '@json2csv/plainjs';
@@ -258,38 +259,33 @@ export default function App() {
             </div>
 
             {/* Table Body */}
-            <AnimatePresence mode="popLayout">
-              {filteredCards.slice(0, 50).map((card) => (
-                <motion.div
-                  key={card.id}
-                  layout
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="grid grid-cols-[80px_1.5fr_1fr_1fr_100px_100px] gap-4 p-4 border-b border-[#141414]/10 hover:bg-[#141414] hover:text-[#E4E3E0] transition-all cursor-pointer group"
-                >
-                  <div className="font-mono text-xs opacity-50 group-hover:opacity-100">{card.id}</div>
-                  <div className="font-bold tracking-tight uppercase flex items-center gap-2">
-                    {card.name}
-                    <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all" />
-                  </div>
-                  <div className="font-mono text-xs uppercase">{getClassName(card.classId)}</div>
-                  <div className="font-mono text-xs uppercase">{getSetName(card.cardSetId)}</div>
-                  <div className="font-mono text-[10px] uppercase">
-                    <span className={`px-2 py-0.5 border ${isStandard(card.cardSetId) ? 'border-green-500 text-green-600 group-hover:text-green-400' : 'border-amber-600 text-amber-700 group-hover:text-amber-400'}`}>
-                      {isStandard(card.cardSetId) ? 'Standard' : 'Wild'}
-                    </span>
-                  </div>
-                  <div className="text-right font-mono font-bold">{card.manaCost}</div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-
-            {filteredCards.length > 50 && (
-              <div className="p-8 text-center font-mono text-xs uppercase opacity-40">
-                ... und {filteredCards.length - 50} weitere Karten (Exportiere für vollständige Liste)
-              </div>
-            )}
+            <div style={{ height: '70vh' }}>
+              <Virtuoso
+                data={filteredCards}
+                itemContent={(index, card) => (
+                  <motion.div
+                    key={card.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="grid grid-cols-[80px_1.5fr_1fr_1fr_100px_100px] gap-4 p-4 border-b border-[#141414]/10 hover:bg-[#141414] hover:text-[#E4E3E0] transition-all cursor-pointer group bg-[#E4E3E0]"
+                  >
+                    <div className="font-mono text-xs opacity-50 group-hover:opacity-100">{card.id}</div>
+                    <div className="font-bold tracking-tight uppercase flex items-center gap-2">
+                      {card.name}
+                      <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all" />
+                    </div>
+                    <div className="font-mono text-xs uppercase">{getClassName(card.classId)}</div>
+                    <div className="font-mono text-xs uppercase">{getSetName(card.cardSetId)}</div>
+                    <div className="font-mono text-[10px] uppercase">
+                      <span className={`px-2 py-0.5 border ${isStandard(card.cardSetId) ? 'border-green-500 text-green-600 group-hover:text-green-400' : 'border-amber-600 text-amber-700 group-hover:text-amber-400'}`}>
+                        {isStandard(card.cardSetId) ? 'Standard' : 'Wild'}
+                      </span>
+                    </div>
+                    <div className="text-right font-mono font-bold">{card.manaCost}</div>
+                  </motion.div>
+                )}
+              />
+            </div>
 
             {filteredCards.length === 0 && !loading && (
               <div className="p-20 text-center">

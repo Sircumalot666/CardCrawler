@@ -79,6 +79,7 @@ app.get("/api/cards", async (req, res) => {
           locale,
           page,
           pageSize: 500,
+          set: 'wild', // Fetch all cards (Standard + Wild)
         },
         headers: {
           Authorization: `Bearer ${token}`,
@@ -118,6 +119,7 @@ app.get("/api/cards/all", async (req, res) => {
             locale,
             page: currentPage,
             pageSize: 500,
+            set: 'wild', // Fetch all cards (Standard + Wild)
           },
           headers: {
             Authorization: `Bearer ${token}`,

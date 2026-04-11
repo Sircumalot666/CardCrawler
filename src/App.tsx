@@ -22,6 +22,7 @@ export default function App() {
   const [progress, setProgress] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState<number | null>(null);
+  const [selectedSet, setSelectedSet] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,8 +55,20 @@ export default function App() {
     }
   };
 
+  const getExportableCards = () => {
+    if (!metadata) return cards;
+    return cards.map(card => ({
+      ...card,
+      className: metadata.classes.find(c => c.id === card.classId)?.name || 'Unknown',
+      setName: metadata.sets.find(s => s.id === card.cardSetId)?.name || 'Unknown',
+      rarityName: metadata.rarities.find(r => r.id === card.rarityId)?.name || 'Unknown',
+      cardTypeName: metadata.types.find(t => t.id === card.cardTypeId)?.name || 'Unknown',
+    }));
+  };
+
   const exportJSON = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cards, null, 2));
+    const exportData = getExportableCards();
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
     downloadAnchorNode.setAttribute("download", "hearthstone_cards.json");
@@ -67,7 +80,8 @@ export default function App() {
   const exportCSV = () => {
     try {
       const parser = new Parser();
-      const csv = parser.parse(cards);
+      const exportData = getExportableCards();
+      const csv = parser.parse(exportData);
       const dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
       const downloadAnchorNode = document.createElement('a');
       downloadAnchorNode.setAttribute("href", dataStr);
@@ -101,6 +115,7 @@ export default function App() {
       const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             card.text?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesClass = selectedClass === null || card.classId === selectedClass;
+      const matchesSet = selectedSet === null || card.cardSetId === selectedSet;
       
       let matchesFormat = true;
       if (selectedFormat === 'standard') {
@@ -109,9 +124,9 @@ export default function App() {
         matchesFormat = !standardSetIds.has(card.cardSetId);
       }
 
-      return matchesSearch && matchesClass && matchesFormat;
+      return matchesSearch && matchesClass && matchesFormat && matchesSet;
     });
-  }, [cards, searchTerm, selectedClass, selectedFormat, standardSetIds]);
+  }, [cards, searchTerm, selectedClass, selectedFormat, selectedSet, standardSetIds]);
 
   const getClassName = (id: number) => {
     return metadata?.classes.find(c => c.id === id)?.name || `Class ${id}`;
@@ -201,7 +216,7 @@ export default function App() {
         )}
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 border-b border-[#141414] pb-12">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-12 border-b border-[#141414] pb-12">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
             <input 
@@ -224,6 +239,23 @@ export default function App() {
               {metadata?.classes.map(c => (
                 <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>
               ))}
+            </select>
+          </div>
+
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+            <select
+              value={selectedSet || ''}
+              onChange={(e) => setSelectedSet(e.target.value ? Number(e.target.value) : null)}
+              className="w-full pl-10 pr-4 py-3 bg-transparent border border-[#141414] focus:outline-none focus:bg-white transition-all font-mono text-sm uppercase appearance-none"
+            >
+              <option value="">ALLE SETS</option>
+              {metadata?.sets
+                .slice()
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map(s => (
+                  <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>
+                ))}
             </select>
           </div>
 

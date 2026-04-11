@@ -1,20 +1,38 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Hearthstone Card Explorer
 
-# Run and deploy your AI Studio app
+Ein Tool zum Abrufen, Anzeigen und Exportieren von Hearthstone-Kartendaten über die offizielle Battle.net API.
 
-This contains everything you need to run your app locally.
+## 🚀 Schnellstart
 
-View your app in AI Studio: https://ai.studio/apps/9e383dd9-209f-4cbe-a6b6-315db2e1e575
+### 1. API-Schlüssel konfigurieren
+Erstelle eine Datei namens `.env` im Hauptverzeichnis (du kannst die `.env.example` als Vorlage kopieren) und trage deine Blizzard API-Zugangsdaten ein:
 
-## Run Locally
+```env
+BLIZZARD_CLIENT_ID=DEINE_CLIENT_ID
+BLIZZARD_CLIENT_SECRET=DEIN_CLIENT_SECRET
+BLIZZARD_REGION=eu
+GEMINI_API_KEY=DEIN_GEMINI_KEY
+```
 
-**Prerequisites:**  Node.js
+Deine Blizzard-Keys erhältst du unter [develop.battle.net](https://develop.battle.net/access/clients).
 
+### 2. App starten
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+#### Windows
+Doppelklicke auf die Datei **`start.bat`**.
+
+#### macOS / Linux
+1. Öffne das Terminal.
+2. Mache das Skript ausführbar: `chmod +x start.sh`
+3. Starte das Skript: `./start.sh`
+
+## 🛠 Features
+- **Vollständiger Datenabruf:** Lädt alle Karten inklusive Metadaten (Sets, Klassen, Typen).
+- **Format-Erkennung:** Automatische Unterscheidung zwischen Standard und Wild.
+- **Export:** Exportiere die gesamte Kartenliste als **JSON** oder **CSV**.
+- **Filter:** Suche nach Namen oder filtere nach Klasse und Format.
+
+## 📦 Technologien
+- **Backend:** Node.js, Express, Axios (OAuth 2.0 Flow)
+- **Frontend:** React, Tailwind CSS, Lucide Icons, Framer Motion
+- **Build-Tool:** Vite

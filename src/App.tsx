@@ -23,7 +23,10 @@ export default function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState<number | null>(null);
   const [selectedSet, setSelectedSet] = useState<number | null>(null);
+  const [fetchClass, setFetchClass] = useState<string | null>(null);
+  const [fetchFormat, setFetchFormat] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [classMappings, setClassMappings] = useState<Record<number, string>>({});
 
   useEffect(() => {
     // Fetch metadata on mount to map IDs to names
@@ -45,7 +48,7 @@ export default function App() {
     setError(null);
     setProgress(10); // Initial progress
     try {
-      const data = await hearthstoneService.getAllCards();
+      const data = await hearthstoneService.getAllCards('de_DE', fetchClass || undefined, fetchFormat || undefined);
       setCards(data.cards);
       setProgress(100);
     } catch (err: any) {
@@ -55,11 +58,11 @@ export default function App() {
     }
   };
 
-  const getExportableCards = () => {
-    if (!metadata) return cards;
-    return cards.map(card => ({
+  const getExportableCards = (cardsToExport: Card[]) => {
+    if (!metadata) return cardsToExport;
+    return cardsToExport.map(card => ({
       ...card,
-      className: metadata.classes.find(c => c.id === card.classId)?.name || 'Unknown',
+      className: classMappings[card.classId] || metadata.classes.find(c => c.id === card.classId)?.name || 'Unknown',
       setName: metadata.sets.find(s => s.id === card.cardSetId)?.name || 'Unknown',
       rarityName: metadata.rarities.find(r => r.id === card.rarityId)?.name || 'Unknown',
       cardTypeName: metadata.types.find(t => t.id === card.cardTypeId)?.name || 'Unknown',
@@ -67,7 +70,7 @@ export default function App() {
   };
 
   const exportJSON = () => {
-    const exportData = getExportableCards();
+    const exportData = getExportableCards(filteredCards);
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
@@ -80,7 +83,7 @@ export default function App() {
   const exportCSV = () => {
     try {
       const parser = new Parser();
-      const exportData = getExportableCards();
+      const exportData = getExportableCards(filteredCards);
       const csv = parser.parse(exportData);
       const dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
       const downloadAnchorNode = document.createElement('a');
@@ -111,11 +114,17 @@ export default function App() {
   }, [metadata]);
 
   const filteredCards = useMemo(() => {
+    const neutralClass = metadata?.classes.find(c => c.slug === 'neutral');
+    const neutralClassId = neutralClass?.id;
+
     return cards.filter(card => {
       const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             card.text?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesClass = selectedClass === null || card.classId === selectedClass;
-      const matchesSet = selectedSet === null || card.cardSetId === selectedSet;
+      
+      let matchesClass = true;
+      if (selectedClass !== null && neutralClassId !== undefined) {
+        matchesClass = card.classId === selectedClass || card.classId === neutralClassId;
+      }
       
       let matchesFormat = true;
       if (selectedFormat === 'standard') {
@@ -124,12 +133,14 @@ export default function App() {
         matchesFormat = !standardSetIds.has(card.cardSetId);
       }
 
+      const matchesSet = selectedSet === null || card.cardSetId === selectedSet;
+
       return matchesSearch && matchesClass && matchesFormat && matchesSet;
     });
-  }, [cards, searchTerm, selectedClass, selectedFormat, selectedSet, standardSetIds]);
+  }, [cards, searchTerm, selectedClass, selectedFormat, selectedSet, standardSetIds, metadata]);
 
   const getClassName = (id: number) => {
-    return metadata?.classes.find(c => c.id === id)?.name || `Class ${id}`;
+    return classMappings[id] || metadata?.classes.find(c => c.id === id)?.name || `Class ${id}`;
   };
 
   const getSetName = (id: number) => {
@@ -153,14 +164,41 @@ export default function App() {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase opacity-60 font-mono">Abzurufendes Format</label>
+            <select
+              value={fetchFormat || ''}
+              onChange={(e) => setFetchFormat(e.target.value || null)}
+              className="px-4 py-2 bg-transparent border border-[#141414] focus:outline-none focus:bg-white transition-all font-mono text-sm uppercase appearance-none"
+            >
+              <option value="">ALLE FORMATE</option>
+              <option value="standard">STANDARD</option>
+              <option value="wild">WILD</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase opacity-60 font-mono">Abzurufende Klasse</label>
+            <select
+              value={fetchClass || ''}
+              onChange={(e) => setFetchClass(e.target.value || null)}
+              className="px-4 py-2 bg-transparent border border-[#141414] focus:outline-none focus:bg-white transition-all font-mono text-sm uppercase appearance-none"
+            >
+              <option value="">ALLE KLASSEN</option>
+              {metadata?.classes.map(c => (
+                <option key={c.id} value={c.slug}>{c.name.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+
           <button
             onClick={fetchAllCards}
             disabled={loading}
             className="flex items-center gap-2 px-6 py-3 bg-[#141414] text-[#E4E3E0] hover:bg-opacity-90 transition-all disabled:opacity-50 uppercase font-mono text-sm tracking-tighter cursor-pointer"
           >
             {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            {loading ? 'Lade Karten...' : 'Alle Karten abrufen'}
+            {loading ? 'Lade Karten...' : 'Karten abrufen'}
           </button>
           
           {cards.length > 0 && (
@@ -276,6 +314,27 @@ export default function App() {
             {filteredCards.length} Karten gefunden
           </div>
         </div>
+
+        {/* Class Renaming UI */}
+        {metadata && (
+          <div className="mb-12 p-6 border border-[#141414]">
+            <h2 className="font-bold uppercase tracking-widest mb-4">Export Klassen-Umbenennung</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {metadata.classes.map(c => (
+                <div key={c.id} className="flex flex-col gap-1">
+                  <label className="text-[10px] uppercase opacity-60 font-mono">{c.name}</label>
+                  <input
+                    type="text"
+                    placeholder={c.name}
+                    value={classMappings[c.id] || ''}
+                    onChange={(e) => setClassMappings(prev => ({...prev, [c.id]: e.target.value}))}
+                    className="px-3 py-2 bg-transparent border border-[#141414] focus:outline-none focus:bg-white transition-all font-mono text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Data Grid */}
         <div className="overflow-x-auto">

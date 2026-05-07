@@ -9,9 +9,13 @@ export const hearthstoneService = {
     return response.data;
   },
 
-  async getAllCards(locale: string = 'de_DE'): Promise<{ cards: Card[], count: number }> {
+  async getAllCards(locale: string = 'de_DE', playerClass?: string, formatSet?: string): Promise<{ cards: Card[], count: number }> {
+    const params: any = { locale };
+    if (playerClass) params.playerClass = playerClass;
+    if (formatSet) params.formatSet = formatSet;
+    
     const response = await axios.get('/api/cards/all', {
-      params: { locale }
+      params
     });
     return response.data;
   },

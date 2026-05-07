@@ -103,24 +103,31 @@ app.get("/api/cards/all", async (req, res) => {
     const token = await getAccessToken();
     const region = process.env.BLIZZARD_REGION || "eu";
     const locale = req.query.locale || "de_DE";
+    const playerClass = req.query.playerClass as string | undefined;
+    const formatSet = req.query.formatSet as string | undefined;
     
     let allCards: any[] = [];
     let currentPage = 1;
     let totalPages = 1;
 
-    console.log("Starting full card fetch...");
+    console.log(`Starting full card fetch: class=${playerClass}, format=${formatSet || 'wild'}...`);
 
     do {
       console.log(`Fetching page ${currentPage}...`);
+      const params: any = {
+        locale,
+        page: currentPage,
+        pageSize: 500,
+        set: formatSet || 'wild', // Fallback to 'wild' for all cards
+      };
+      if (playerClass) {
+        params.class = `${playerClass},neutral`;
+      }
+
       const response = await axios.get(
         `https://${region}.api.blizzard.com/hearthstone/cards`,
         {
-          params: {
-            locale,
-            page: currentPage,
-            pageSize: 500,
-            set: 'wild', // Fetch all cards (Standard + Wild)
-          },
+          params,
           headers: {
             Authorization: `Bearer ${token}`,
           }
